@@ -1,0 +1,16 @@
+{application, coinbase_api,
+ [
+  {description, "Coinbase API client"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  sasl,
+                  jsx,
+                  gun,
+                  lager
+                 ]},
+  {mod, { coinbase_api_app, []}},
+  {env, []}
+ ]}.
