@@ -28,6 +28,13 @@
     gun ::any()
 }).
 
+maybe_iso8601(Date) ->
+    try iso8601:parse(Date) of
+        ErlangDate -> ErlangDate
+    catch error:badarg ->
+        undefined
+    end.
+
 extract_data(#coinbase_api_resp{data=Data}) ->
     Data.
 
@@ -116,12 +123,12 @@ parse_order(Proplist) when is_list(Proplist) ->
         specified_funds = decimal:from_binary(proplists:get_value(<<"specified_funds">>, Proplist, <<"0">>)),
         type = proplists:get_value(<<"type">>, Proplist),
         post_only = proplists:get_value(<<"post_only">>, Proplist),
-        created_at = proplists:get_value(<<"created_at">>, Proplist),
+        created_at = maybe_iso8601(proplists:get_value(<<"created_at">>, Proplist)),
         fill_fees = decimal:from_binary(proplists:get_value(<<"fill_fees">>, Proplist, <<"0">>)),
         filled_size = decimal:from_binary(proplists:get_value(<<"filled_size">>, Proplist, <<"0">>)),
         executed_value = decimal:from_binary(proplists:get_value(<<"executed_value">>, Proplist, <<"0">>)),
         status = proplists:get_value(<<"status">>, Proplist),
-        settled = proplists:get_value(<<"settled">>, Proplist),
+        settled = maybe_iso8601(proplists:get_value(<<"settled">>, Proplist)),
         size = decimal:from_binary(proplists:get_value(<<"size">>, Proplist, <<"0">>)),
         price = decimal:from_binary(proplists:get_value(<<"price">>, Proplist, <<"0">>)),
         time_in_force = proplists:get_value(<<"time_in_force">>, Proplist)
@@ -202,7 +209,7 @@ parse_ledger_entry(Entry) when is_list(Entry) ->
     Details = proplists:get_value(<<"details">>, Entry),
     #coinbase_ledger{
         id = proplists:get_value(<<"id">>, Entry),
-        created_at =proplists:get_value(<<"created_at">>, Entry),
+        created_at = maybe_iso8601(proplists:get_value(<<"created_at">>, Entry)),
         amount = decimal:from_binary(proplists:get_value(<<"amount">>, Entry)),
         balance = decimal:from_binary(proplists:get_value(<<"balance">>, Entry)),
         type =proplists:get_value(<<"type">>, Entry),
@@ -225,8 +232,8 @@ parse_hold_entry(Entry) when is_list(Entry) ->
     #coinbase_hold{
         id = proplists:get_value(<<"id">>, Entry),
         account_id = proplists:get_value(<<"account_id">>, Entry),
-        created_at =proplists:get_value(<<"created_at">>, Entry),
-        updated_at =proplists:get_value(<<"updated_at">>, Entry),
+        created_at = maybe_iso8601(proplists:get_value(<<"created_at">>, Entry)),
+        updated_at = maybe_iso8601(proplists:get_value(<<"updated_at">>, Entry)),
         amount = decimal:from_binary(proplists:get_value(<<"amount">>, Entry)),
         type =proplists:get_value(<<"type">>, Entry),
         ref =proplists:get_value(<<"ref">>, Entry)
@@ -255,10 +262,10 @@ parse_fill_entry(Entry) when is_list(Entry) ->
         price = decimal:from_binary(proplists:get_value(<<"price">>, Entry)),
         size = decimal:from_binary(proplists:get_value(<<"size">>, Entry)),
         order_id = proplists:get_value(<<"order_id">>, Entry),
-        created_at = proplists:get_value(<<"created_at">>, Entry),
+        created_at = maybe_iso8601(proplists:get_value(<<"created_at">>, Entry)),
         liquidity = proplists:get_value(<<"liquidity">>, Entry),
         fee = decimal:from_binary(proplists:get_value(<<"fee">>, Entry)),
-        settled = proplists:get_value(<<"settled">>, Entry),
+        settled = maybe_iso8601(proplists:get_value(<<"settled">>, Entry)),
         side = proplists:get_value(<<"side">>, Entry)
     }.
 
