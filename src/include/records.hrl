@@ -1,6 +1,16 @@
 %%%
 %%% Record definitions for the coinbase exchange API.
 %%%
+%%%
+
+%% Record for a coinbase API response.
+%% If the response is for a paginated API, cb_before and cb_after can be used
+%% to request different pages.
+-record(coinbase_api_resp, {
+    data :: any(),
+    cb_before,
+    cb_after
+}).
 
 %% Account struct
 -record (coinbase_account, {

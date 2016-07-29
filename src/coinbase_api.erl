@@ -19,12 +19,6 @@
 -export([start_link/4]).
 -export([init/5]).
 
--record(coinbase_api_resp, {
-    data :: any(),
-    cb_before,
-    cb_after
-}).
-
 -record(state, {
     parent :: pid(),
     owner :: pid(),
@@ -336,25 +330,37 @@ call_get_account(State, Method, Path, Body) ->
 
 call_account_history(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_ledger_entry_list(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=parse_ledger_entry_list(Response)
+            }};
         Other -> {error, Other}
     end.
 
 call_get_holds(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_hold_entry_list(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=parse_hold_entry_list(Response)
+            }};
         Other -> {error, Other}
     end.
 
 call_place_order(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_order(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=parse_order(Response)
+            }};
         Other -> {error, Other}
     end.
 
 call_cancel_order(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, jsx:decode(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=jsx:decode(Response)
+            }};
         Other -> {error, Other}
     end.
 
@@ -369,7 +375,10 @@ call_get_orders(State, Method, Path, Body) ->
 
 call_get_order(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_order(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=parse_order(Response)
+            }};
         Other -> {error, Other}
     end.
 
