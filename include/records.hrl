@@ -14,31 +14,71 @@
 
 %% Account struct
 -record (coinbase_account, {
-    id, currency, balance, hold, available, profile_id
+    id,
+    currency,
+    balance=decimal:new(0,0),
+    hold,
+    available,
+    profile_id
 }).
 
 %% Ledger entry
 -record(coinbase_ledger, {
-    id, created_at, amount, balance, type, details
-}).
+    id,
+    created_at,
+    amount=decimal:new(0,0),
+    balance,
+    type,
+    details
+ }).
 -record(coinbase_ledger_details, {
-    order_id, trade_id, product_id
-}).
+    order_id,
+    trade_id,
+    product_id
+ }).
 
 %% Hold entry
 -record(coinbase_hold, {
-    id, account_id, created_at, updated_at, amount, type, ref
+    id,
+    account_id,
+    created_at,
+    updated_at,
+    amount=decimal:new(0,0),
+    type,
+    ref
 }).
 
 %% Order entry
 -record(coinbase_order, {
-    id, product_id, side, stp, funds, specified_funds, type, post_only,
-    created_at, fill_fees, filled_size, executed_value, status, settled, size,
-    price, time_in_force
+    id,
+    product_id,
+    side,
+    stp,
+    funds=decimal:new(0,0),
+    specified_funds=decimal:new(0,0),
+    type,
+    post_only,
+    created_at,
+    fill_fees=decimal:new(0,0),
+    filled_size=decimal:new(0,0),
+    executed_value,
+    status,
+    settled,
+    size=decimal:new(0,0),
+    price=decimal:new(0,0),
+    time_in_force
 }).
 
 %% Fill entry
 -record(coinbase_fill, {
-    id, product_id, price, size, order_id, created_at, liquidity, fee,
-    settled, side
+    id,
+    product_id,
+    price=decimal:new(0,0),
+    size=decimal:new(0,0),
+    order_id,
+    created_at,
+    liquidity,
+    fee=decimal:new(0,0),
+    settled,
+    side
 }).
