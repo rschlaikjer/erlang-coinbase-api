@@ -310,83 +310,11 @@ api_request(#state{gun=Gun, key=Key, secret=Secret, passphrase=Passphrase}, Meth
             error
     end.
 
-call_get_accounts(State, Method, Path, Body) ->
+call_and_parse_response(State, Method, Path, Body, Parser) ->
     case api_request(State, Method, Path, Body) of
         {200, Response, Headers} ->
             {ok, #coinbase_api_resp{
-                data=parse_list_accounts(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_get_account(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=parse_account(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_account_history(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=parse_ledger_entry_list(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_get_holds(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=parse_hold_entry_list(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_place_order(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=parse_order(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_cancel_order(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=jsx:decode(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_get_orders(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response, Headers} ->
-            {ok, #coinbase_api_resp{
-                data=parse_order_list(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_get_order(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response} ->
-            {ok, #coinbase_api_resp{
-                data=parse_order(Response)
-            }};
-        Other -> {error, Other}
-    end.
-
-call_get_fills(State, Method, Path, Body) ->
-    case api_request(State, Method, Path, Body) of
-        {200, Response, Headers} ->
-            {ok, #coinbase_api_resp{
-                data=parse_fill_entry_list(Response),
+                data=apply(Parser, [Response]),
                 cb_before=proplists:get_value(<<"cb-before">>, Headers),
                 cb_after=proplists:get_value(<<"cb-after">>, Headers)
             }};
@@ -396,31 +324,67 @@ call_get_fills(State, Method, Path, Body) ->
 loop(State=#state{}) ->
     receive
         {get_accounts, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref,  call_get_accounts(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_list_accounts/1
+            )},
             loop(State);
         {get_account, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_get_account(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_account/1
+            )},
             loop(State);
         {account_history, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_account_history(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_ledger_entry_list/1
+            )},
             loop(State);
         {get_holds, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_get_holds(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_hold_entry_list/1
+            )},
             loop(State);
         {place_order, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_place_order(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_order/1
+            )},
             loop(State);
         {cancel_order, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_cancel_order(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun jsx:decode/1
+            )},
             loop(State);
         {get_orders, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_get_orders(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_order_list/1
+            )},
             loop(State);
         {get_order, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_get_order(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_order/1
+            )},
             loop(State);
         {get_fills, Owner, Ref, Method, Path, Body} ->
-            Owner ! {Ref, call_get_fills(State, Method, Path, Body)},
+            Owner ! {
+              Ref,
+              call_and_parse_response(
+                State, Method, Path, Body, fun parse_fill_entry_list/1
+            )},
             loop(State);
         {gun_up, Gun, http} ->
             loop(State#state{gun=Gun});
