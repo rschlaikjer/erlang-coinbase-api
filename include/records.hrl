@@ -39,6 +39,6 @@
 
 %% Fill entry
 -record(coinbase_fill, {
-    trade_id, product_id, price, size, order_id, created_at, liquidity, fee,
+    id, product_id, price, size, order_id, created_at, liquidity, fee,
     settled, side
 }).

@@ -250,7 +250,7 @@ parse_fill_entry(Entry) when is_binary(Entry) ->
     parse_fill_entry(jsx:decode(Entry));
 parse_fill_entry(Entry) when is_list(Entry) ->
     #coinbase_fill{
-        trade_id = proplists:get_value(<<"id">>, Entry),
+        id = proplists:get_value(<<"id">>, Entry),
         product_id = proplists:get_value(<<"product_id">>, Entry),
         price = decimal:from_binary(proplists:get_value(<<"price">>, Entry)),
         size = decimal:from_binary(proplists:get_value(<<"size">>, Entry)),
