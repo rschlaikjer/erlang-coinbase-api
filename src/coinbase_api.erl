@@ -12,11 +12,18 @@
 -export([cancel_all_orders/1, cancel_order/2]).
 -export([get_orders/1, get_orders/2]).
 -export([get_order/2]).
--export([get_fills/1]).
+-export([get_fills/1,get_fills/2]).
+-export([extract_data/1]).
 
 %% Internals.
 -export([start_link/4]).
 -export([init/5]).
+
+-record(coinbase_api_resp, {
+    data :: any(),
+    cb_before,
+    cb_after
+}).
 
 -record(state, {
     parent :: pid(),
@@ -26,6 +33,9 @@
     passphrase :: any(),
     gun ::any()
 }).
+
+extract_data(#coinbase_api_resp{data=Data}) ->
+    Data.
 
 connect(Key, Secret, Passphrase) ->
     case supervisor:start_child(coinbase_api_sup, [self(), Key, Secret, Passphrase]) of
@@ -66,6 +76,12 @@ get_account(ServerPid, Account) when is_binary(Account) ->
 %% completed, the hold is removed.
 get_holds(ServerPid, Account) when is_binary(Account) ->
     request(get_holds, ServerPid, <<"GET">>, <<"/accounts/", Account/binary, "/holds">>).
+get_holds(ServerPid, Account, {Paginate, #coinbase_api_resp{cb_before=Before, cb_after=After}}) ->
+    URI = case Paginate
+    of before -> <<"/accounts/", Account/binary, "/holds/?before=", Before/binary>>;
+       since  -> <<"/accounts/", Account/binary, "/holds/?after=", After/binary>>
+    end,
+    request(get_fills, ServerPid, <<"GET">>, URI).
 
 %% Place order
 place_order(ServerPid, limit, Side, Product, Price, Size) ->
@@ -178,6 +194,12 @@ parse_list_accounts(Unknown) -> Unknown.
 %% account balance. Items are paginated and sorted latest first.
 account_history(ServerPid, Account) when is_binary(Account) ->
     request(account_history, ServerPid, <<"GET">>, <<"/accounts/", Account/binary, "/ledger">>).
+account_history(ServerPid, Account, {Paginate, #coinbase_api_resp{cb_before=Before, cb_after=After}}) ->
+    URI = case Paginate
+    of before -> <<"/fills/", Account/binary, "/ledger?before=", Before/binary>>;
+       since  -> <<"/fills/", Account/binary, "/ledger/?after=", After/binary>>
+    end,
+    request(get_fills, ServerPid, <<"GET">>, URI).
 
 %% Parses ledger entry JSON to a record. Accepts strings or proplists.
 parse_ledger_entry(Entry) when is_binary(Entry) ->
@@ -224,6 +246,10 @@ parse_hold_entry_list(EntryList) when is_binary(EntryList) ->
 %% Get a list of fills
 get_fills(ServerPid) ->
     request(get_fills, ServerPid, <<"GET">>, <<"/fills/">>).
+get_fills(ServerPid, {before, #coinbase_api_resp{cb_before=CB}}) ->
+    request(get_fills, ServerPid, <<"GET">>, <<"/fills/?before=", CB/binary>>);
+get_fills(ServerPid, {since, #coinbase_api_resp{cb_after=CB}}) ->
+    request(get_fills, ServerPid, <<"GET">>, <<"/fills/?after=", CB/binary>>).
 
 %% Parses fill JSON to a record. Accepts strings or proplists.
 parse_fill_entry(Entry) when is_binary(Entry) ->
@@ -282,7 +308,7 @@ api_request(#state{gun=Gun, key=Key, secret=Secret, passphrase=Passphrase}, Meth
             {Status, no_data};
         {response, nofin, Status, ResponseHeaders} ->
             {ok, ResponseBody} = gun:await_body(Gun, StreamRef),
-            {Status, ResponseBody};
+            {Status, ResponseBody, ResponseHeaders};
         {error, timeout} ->
             timeout;
         Anything ->
@@ -292,13 +318,19 @@ api_request(#state{gun=Gun, key=Key, secret=Secret, passphrase=Passphrase}, Meth
 
 call_get_accounts(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_list_accounts(Response)};
+        {200, Response, Headers} ->
+            {ok, #coinbase_api_resp{
+                data=parse_list_accounts(Response)
+            }};
         Other -> {error, Other}
     end.
 
 call_get_account(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_account(Response)};
+        {200, Response} ->
+            {ok, #coinbase_api_resp{
+                data=parse_account(Response)
+            }};
         Other -> {error, Other}
     end.
 
@@ -328,7 +360,10 @@ call_cancel_order(State, Method, Path, Body) ->
 
 call_get_orders(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_order_list(Response)};
+        {200, Response, Headers} ->
+            {ok, #coinbase_api_resp{
+                data=parse_order_list(Response)
+            }};
         Other -> {error, Other}
     end.
 
@@ -340,7 +375,12 @@ call_get_order(State, Method, Path, Body) ->
 
 call_get_fills(State, Method, Path, Body) ->
     case api_request(State, Method, Path, Body) of
-        {200, Response} -> {ok, parse_fill_entry_list(Response)};
+        {200, Response, Headers} ->
+            {ok, #coinbase_api_resp{
+                data=parse_fill_entry_list(Response),
+                cb_before=proplists:get_value(<<"cb-before">>, Headers),
+                cb_after=proplists:get_value(<<"cb-after">>, Headers)
+            }};
         Other -> {error, Other}
     end.
 
