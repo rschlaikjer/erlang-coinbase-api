@@ -71,7 +71,6 @@
 
 %% Fill entry
 -record(coinbase_fill, {
-    id,
     product_id,
     price=decimal:new(0,0),
     size=decimal:new(0,0),
