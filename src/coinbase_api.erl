@@ -128,7 +128,7 @@ parse_order(Proplist) when is_list(Proplist) ->
         filled_size = decimal:from_binary(proplists:get_value(<<"filled_size">>, Proplist, <<"0">>)),
         executed_value = decimal:from_binary(proplists:get_value(<<"executed_value">>, Proplist, <<"0">>)),
         status = proplists:get_value(<<"status">>, Proplist),
-        settled = maybe_iso8601(proplists:get_value(<<"settled">>, Proplist)),
+        settled = proplists:get_value(<<"settled">>, Proplist),
         size = decimal:from_binary(proplists:get_value(<<"size">>, Proplist, <<"0">>)),
         price = decimal:from_binary(proplists:get_value(<<"price">>, Proplist, <<"0">>)),
         time_in_force = proplists:get_value(<<"time_in_force">>, Proplist)
@@ -287,7 +287,7 @@ parse_fill_entry(Entry) when is_list(Entry) ->
         created_at = maybe_iso8601(proplists:get_value(<<"created_at">>, Entry)),
         liquidity = proplists:get_value(<<"liquidity">>, Entry),
         fee = decimal:from_binary(proplists:get_value(<<"fee">>, Entry)),
-        settled = maybe_iso8601(proplists:get_value(<<"settled">>, Entry)),
+        settled = proplists:get_value(<<"settled">>, Entry),
         side = proplists:get_value(<<"side">>, Entry)
     }.
 
