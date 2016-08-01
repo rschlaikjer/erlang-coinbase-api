@@ -139,21 +139,44 @@ parse_order_list(Binary) when is_binary(Binary) ->
     OrderList = jsx:decode(Binary),
     [ parse_order(Order) || Order <- OrderList ].
 
+encode_get_params(List) when is_list(List) ->
+    lager:info("Encoding param list ~p~n", [List]),
+    encode_get_params(List, <<"">>).
+encode_get_params([], String) -> String;
+encode_get_params([{Opt, Val}|Tail], <<"">>) ->
+    lager:info("Adding option ~p:~p (Tail: ~p)~n", [Opt, Val, Tail]),
+    encode_get_params(
+      Tail, <<"?", Opt/binary, "=", Val/binary>>
+     );
+encode_get_params([{Opt, Val}|Tail], String) ->
+    encode_get_params(
+      Tail, <<String/binary, "&", Opt/binary, "=", Val/binary>>).
+
 %% Get the list of current open orders. Only open or un-settled orders are
 %% returned. As soon as an order is no longer open and settled, it will no
 %% longer appear in the default request.
 get_orders(ServerPid) ->
     request(get_orders, ServerPid, <<"GET">>, <<"/orders">>).
-get_orders(ServerPid, open) ->
-    request(get_orders, ServerPid, <<"GET">>, <<"/orders?status=open">>);
-get_orders(ServerPid, pending) ->
-    request(get_orders, ServerPid, <<"GET">>, <<"/orders?status=pending">>);
-get_orders(ServerPid, active) ->
-    request(get_orders, ServerPid, <<"GET">>, <<"/orders?status=active">>);
-get_orders(ServerPid, all) ->
-    request(get_orders, ServerPid, <<"GET">>, <<"/orders?status=all">>);
-get_orders(ServerPid, done) ->
-    request(get_orders, ServerPid, <<"GET">>, <<"/orders?status=done">>).
+get_orders(ServerPid, Params) ->
+    Paginate =
+        case proplists:lookup(before, Params) of
+           none ->
+               case proplists:lookup(since, Params) of
+                   none -> [];
+                   {since, #coinbase_api_resp{cb_after=After}} ->
+                       [{<<"after">>, After}]
+               end;
+            {before, #coinbase_api_resp{cb_before=Before}} ->
+                [{<<"before">>, Before}]
+        end,
+    Status =
+        case proplists:lookup(status, Params) of
+            none -> [];
+            {status, Value} -> [{<<"status">>, Value}]
+        end,
+    QueryString = encode_get_params(lists:flatten([Paginate|Status])),
+    lager:info("Query string: ~p~n", [QueryString]),
+    request(get_orders, ServerPid, <<"GET">>, <<"/orders", QueryString/binary>>).
 
 %% Get a single order by ID
 get_order(ServerPid, OrderId) ->
