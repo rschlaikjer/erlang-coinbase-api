@@ -1,6 +1,7 @@
 -module(coinbase_api).
 -compile([{parse_transform, lager_transform}]).
 -include("include/records.hrl").
+-define(API_CALL_TIMEOUT, 30000).
 
 %% Public API
 -export([connect/3]).
@@ -303,7 +304,7 @@ request(RequestType, ServerPid, Method, Endpoint, Body) ->
     Ref = make_ref(),
     ServerPid ! {RequestType, self(), Ref, Method, Endpoint, Body},
     receive {Ref, Answer} -> Answer
-    after 5000 -> {error, timeout}
+    after ?API_CALL_TIMEOUT -> {error, timeout}
     end.
 
 %% Handle the actual signing, headers and response of a coinbase request.
