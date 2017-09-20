@@ -9,7 +9,8 @@
                   sasl,
                   jsx,
                   gun,
-                  lager
+                  lager,
+                  decimal
                  ]},
   {mod, { coinbase_api_app, []}},
   {env, []}

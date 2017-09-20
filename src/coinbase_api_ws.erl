@@ -126,11 +126,11 @@ parse_ws_message(<<"ticker">>, Message) ->
         sequence=proplists:get_value(<<"sequence">>, Message),
         time=proplists:get_value(<<"time">>, Message),
         product_id=proplists:get_value(<<"product_id">>, Message),
-        price=proplists:get_value(<<"price">>, Message),
+        price=decimal:from_binary(proplists:get_value(<<"price">>, Message)),
         side =proplists:get_value(<<"side">>, Message),
-        last_size=proplists:get_value(<<"last_size">>, Message),
-        best_bid=proplists:get_value(<<"best_bid">>, Message),
-        best_ask=proplists:get_value(<<"best_ask">>, Message)
+        last_size=decimal:from_binary(proplists:get_value(<<"last_size">>, Message)),
+        best_bid=decimal:from_binary(proplists:get_value(<<"best_bid">>, Message)),
+        best_ask=decimal:from_binary(proplists:get_value(<<"best_ask">>, Message))
     };
 parse_ws_message(Type, Message) ->
     lager:info("Got unhandled message type '~s': ~p~n", [Type, Message]),
