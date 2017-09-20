@@ -6,8 +6,6 @@
 
 -define(WS_URI, "wss://ws-feed.gdax.com").
 
--export([connect/0]).
-
 -export([start_link/1]).
 
 -export([init/1,
@@ -21,9 +19,6 @@
     callback :: pid(),
     gun :: any()
 }).
-
-connect() ->
-    supervisor:start_child(coinbase_api_ws_sup, [self()]).
 
 start_link(Callback) ->
     gen_server:start_link(?MODULE, [Callback], []).

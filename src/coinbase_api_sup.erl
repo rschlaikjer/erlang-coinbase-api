@@ -14,11 +14,27 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	supervisor:start_link({local, ?SUPERVISOR}, ?MODULE, []).
+    supervisor:start_link({local, ?SUPERVISOR}, ?MODULE, []).
 
 %% supervisor.
 
 init([]) ->
-	Procs = [{coinbase_api, {coinbase_api, start_link, []},
-		temporary, 5000, worker, [coinbase_api]}],
-	{ok, {{simple_one_for_one, 10, 10}, Procs}}.
+    Children = [
+    {
+        coinbase_api_http_sup,
+        {coinbase_api_http_sup, start_link, []},
+        permanent,
+        3000,
+        supervisor,
+        [coinbase_api_http_sup]
+    },
+    {
+        coinbase_api_ws_sup,
+        {coinbase_api_ws_sup, start_link, []},
+        permanent,
+        3000,
+        supervisor,
+        [coinbase_api_ws_sup]
+    }
+    ],
+    {ok, {{one_for_one, 11, 10}, Children }}.
