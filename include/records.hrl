@@ -81,3 +81,22 @@
     settled,
     side
 }).
+
+-record(coinbase_ws_heartbeat, {
+    sequence :: pos_integer(),
+    last_trade_id :: pos_integer(),
+    product_id :: binary(),
+    time :: binary()
+}).
+
+-record(coinbase_ws_ticker, {
+    trade_id :: pos_integer(),
+    sequence :: pos_integer(),
+    time :: binary(),
+    product_id :: binary(),
+    price,
+    side :: 'buy' | 'sell',
+    last_size,
+    best_bid,
+    best_ask
+}).
