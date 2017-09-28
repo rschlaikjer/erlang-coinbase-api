@@ -41,6 +41,11 @@ handle_cast(Msg, State) ->
     lager:info("Unexpected cast ~p~n", [Msg]),
     {noreply, State}.
 
+handle_info({gun_ws, Gun, {close, Code, Reason}}, State) ->
+    lager:info("WS state -> closed: ~p: ~p~n", [Code, Reason]),
+    gun:close(Gun),
+    gen_server:cast(self(), reconnect),
+    {noreply, State};
 handle_info({gun_ws, Gun, close}, State) ->
     lager:info("WS state -> closed"),
     gun:close(Gun),
